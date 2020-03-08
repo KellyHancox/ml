@@ -1,0 +1,52 @@
+def ID3(examples, outcomes, variables, attributes, traversed):
+    results = countLabels(examples, outcomes)
+    
+    # If all examples in S are of the same class
+    # return a leaf with that class label 
+    if sum(results) == max(results):
+        print("Pure Subset")
+        print(outcomes[results.index(max(results))])
+        return outcomes[results.index(max(results))]
+    
+    # else if there are no more variables to test
+    # return a leaf with the most common class label 
+    elif len(variables) == len(traversed):
+        results = countLabels(examples, outcomes)
+        
+        # Find the index of the largest value in the list
+        #https://www.science-emergence.com/Articles/Hot-to-find-the-largest-number-and-its-index-in-a-list-with-python-/
+        print("No More Attributes")
+        print(outcomes[results.index(max(results))])
+        return outcomes[results.index(max(results))]
+    
+    
+    # else choose the attribute A that maximizes the Information Gain of S 
+    # let attribute A be the decision for the current node
+    # add a branch from the current node for each possible value V of attribute A 
+    else: 
+        listIG = []
+        for variable in variables:
+            if variable not in traversed:
+                print(variable)
+                listIG.append(informationGain(examples, outcomes, variables.index(variable), attributes[variable]))
+            else:
+                listIG.append(-1)
+        selectedVariable = variables[listIG.index(max(listIG))]
+        print()
+        print("Go Down")
+        print(selectedVariable)
+        traversed.append(selectedVariable)
+        
+        # for each branch 
+        # “sort” examples down the branches based on their value V of attribute A
+        # recursively call ID3(Sv) on the set of examples in each 
+        for attribute in attributes[selectedVariable]:
+            traversed2 = copy.deepcopy(traversed)
+            print()
+            print(attribute)
+            exampleSubset = []
+            for record in examples:
+                if record[listIG.index(max(listIG))] == attribute:
+                    exampleSubset.append(record)
+            print(traversed2)
+            ID3(exampleSubset, outcomes, variables, attributes, traversed2)
