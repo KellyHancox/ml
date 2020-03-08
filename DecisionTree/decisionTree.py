@@ -3,9 +3,11 @@ import string
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import copy
+import pprint
+pp = pprint.PrettyPrinter(indent = 4)
 
-
-def id3(s, attributes, classes, returnableDict):
+def id3(s, attributes, classes):
 
     if len(s) == 0:
         return
@@ -13,11 +15,11 @@ def id3(s, attributes, classes, returnableDict):
     current_classes = return_classes(s)
 
     #if all examples in s are of the same class
-    if len(current_classes.keys()) <= 1:
+    if len(current_classes.keys()) == 1:
         return current_classes.keys()
 
     #else if no attributes left
-    if attributes['num'] == 0:
+    elif attributes['num'] == 0:
         return get_most_common_class(current_classes)
 
     #else choose the attribute that maximizes the gain 
@@ -27,44 +29,26 @@ def id3(s, attributes, classes, returnableDict):
         currentDict = {}
         for instance in s:
             instanceIndexed = re.split(r",", instance)
+            print(instance)
 
             for value in attributes[attribute_with_most_gain]['values']:
                 
                 if value not in currentDict:
                     currentDict[value] = []
-                elif instanceIndexed[attributes[attribute_with_most_gain]['index']] == value:
+                if instanceIndexed[attributes[attribute_with_most_gain]['index']] == value:
                     currentDict[value].append(instance)
         
 
-        # print('attributes after the deletion', attributes)
-        # print('')
-        print('attribute with most gain', attribute_with_most_gain)
-
+        del attributes[attribute_with_most_gain]
         attributes["num"] = attributes['num'] - 1
-
-
-        for key, value in currentDict.items():
-            print('here\'s what we\'re passing:')
-            print('att w most gain', attribute_with_most_gain)
-            print('key when we pass', key)
-            print('s:', value)
-            print('attributes:', attributes)
-            print('classes:', classes)
-            print('')
-
-            Map<String, String[]> subMap = new HashMap<String, String[]>(map);
-            attributes_left = attributes
-            del attributes_left[attribute_with_most_gain]
-
-
-            #mapPermute(subMap, currentPermutation + key + "=" + value + ", ");
-
-
-            returnableDict.append(currentDict[key] = id3(value, attributes_left, classes))
-
-        #finalDict = {attribute_with_most_gain: currentDict}
         
-        return returnableDict
+ 
+        for key, value in currentDict.items():
+            attributes2 = copy.deepcopy(attributes)
+            currentDict[key] = id3(value, attributes2, classes)
+        finalDict = {attribute_with_most_gain: currentDict}
+        
+        return finalDict
 
         
 
@@ -199,8 +183,11 @@ for line in info[8:]:
 
 entropy = get_entropy(yesCount, totalNumData, noCount)
 
+pp.pprint(fileDictionary)
 
-final = id3(fileDictionary["s"], fileDictionary["attributes"], fileDictionary["classes"], {})
+
+final = id3(fileDictionary["s"], fileDictionary["attributes"], fileDictionary["classes"])
+
 
 print(final)
 
