@@ -220,8 +220,6 @@ for index in range(0, len(info)):
     if index > 7:
         fileDictionary["s"].append(info[index])
 
-#print(fileDictionary)
-
 yesCount = 0
 noCount = 0
 totalNumData = 0
@@ -238,28 +236,30 @@ for line in info[8:]:
 
 
 entropy = get_entropy(yesCount, totalNumData, noCount)
-
-
 sArray = fileDictionary['s']
+
+
+
 random.shuffle(sArray)
-
 amountOfTraining = round(len(sArray)*.8)
-
 training = sArray[0:amountOfTraining]
 test = sArray[amountOfTraining:]
-
 final = id3(training, fileDictionary["attributes"], fileDictionary["classes"])
-
 index_labels = {'age': 0, 'prescription': 1, 'astigmatism': 2, 'tear-rate':3}
 
 
 correct_classification = 0
 incorrect_classification = 0
 
+for example in test:
+    example = re.split(r",", example)
+    classification = classify_me(example, final, index_labels)
+    if classification == example[len(example)-1]:
+        correct_classification = correct_classification + 1
+    else:
+        incorrect_classification = incorrect_classification + 1
 
+print("Correct classifications", correct_classification)
+print("Incorect classifications", incorrect_classification)
 
-
-
-#print(final['tear-rate']['normal'])
-
-pp.pprint(final)
+#pp.pprint(final)
