@@ -4,8 +4,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import copy
+import random
 import pprint
 pp = pprint.PrettyPrinter(indent = 4)
+
+'''
+#from internet
+def dict_path(path,my_dict):
+    dictArray = []
+
+    for k,v in my_dict.items():
+        if isinstance(v,dict):
+            dict_path(path+" "+k,v)
+        else:
+            print(path +" " + k)
+            noNewLines = path +" " + k
+            noNewLines = re.split(r"\n", noNewLines)
+
+            words = noNewLines
+            words = re.split(r" ", words)
+            words = words[1:]
+            
+            for index in range(0, len(words), 2):
+                currD = {}
+                currD[words[index]] = words[index+1]
+                dictArray.append(currD)
+                # print(currD)
+
+            # print(words)
+            # print(path+" "+k,"=>",v)
+    print(dictArray)
+#dict_path("",my_dict)
+'''
 
 def id3(s, attributes, classes):
 
@@ -16,7 +46,8 @@ def id3(s, attributes, classes):
 
     #if all examples in s are of the same class
     if len(current_classes.keys()) == 1:
-        return current_classes.keys()
+        for key in current_classes.keys():
+            return key
 
     #else if no attributes left
     elif attributes['num'] == 0:
@@ -29,7 +60,6 @@ def id3(s, attributes, classes):
         currentDict = {}
         for instance in s:
             instanceIndexed = re.split(r",", instance)
-            print(instance)
 
             for value in attributes[attribute_with_most_gain]['values']:
                 
@@ -42,15 +72,13 @@ def id3(s, attributes, classes):
         del attributes[attribute_with_most_gain]
         attributes["num"] = attributes['num'] - 1
         
- 
         for key, value in currentDict.items():
             attributes2 = copy.deepcopy(attributes)
             currentDict[key] = id3(value, attributes2, classes)
-        finalDict = {attribute_with_most_gain: currentDict}
         
-        return finalDict
 
-        
+        finalDict = {attribute_with_most_gain: currentDict}
+        return finalDict
 
 
 def get_most_gain(s, attributes, classes):
@@ -67,7 +95,7 @@ def get_most_gain(s, attributes, classes):
 
 
 def get_gain(variables, instances, index, classes):
-    temp = [ [ 0 for y in range( len(classes) ) ] for x in range( len(variables) ) ]
+    temp = [ [ 0 for y in range( len(classes)+1 ) ] for x in range( len(variables) ) ]
     gain = []
     for instance in instances:
         instance = re.split(r",", instance)
@@ -138,9 +166,36 @@ def get_entropy(count, total, count2):
     return -(count/total*math.log2(count/total)+count2/total*math.log2(count2/total))
 
 
+def classify_me(example, dictionary, index_labels):
+
+    classification = ""
+
+    for key in dictionary.keys():
+        print('key is:', key)
+        currKey = key
+
+        index = index_labels[key]
+        currentVariable = example[index]
+        print('currentVariable:', currentVariable)
+
+        for key2 in dictionary[currKey].keys():
+
+            print('key2 is:', key2)
+
+            if currentVariable == key2:
+                print('is instance', isinstance(dictionary[currKey][key2],dict))
+                if isinstance(dictionary[currKey][key2],dict):
+                    classification = classify_me(example, dictionary[currKey][key2], index_labels)
+                else:
+                    print('inside else. here is currkey:', dictionary[currKey][key2])
+                    return dictionary[currKey][key2]
+
+    return classification
+
+
 
 #read in contents
-file = open("fishingData.txt", "r")
+file = open("contactData.txt", "r")
 contents = file.read()
 info = re.split(r"\n", contents)
 
@@ -165,6 +220,7 @@ for index in range(0, len(info)):
     if index > 7:
         fileDictionary["s"].append(info[index])
 
+#print(fileDictionary)
 
 yesCount = 0
 noCount = 0
@@ -183,43 +239,27 @@ for line in info[8:]:
 
 entropy = get_entropy(yesCount, totalNumData, noCount)
 
-pp.pprint(fileDictionary)
+
+sArray = fileDictionary['s']
+random.shuffle(sArray)
+
+amountOfTraining = round(len(sArray)*.8)
+
+training = sArray[0:amountOfTraining]
+test = sArray[amountOfTraining:]
+
+final = id3(training, fileDictionary["attributes"], fileDictionary["classes"])
+
+index_labels = {'age': 0, 'prescription': 1, 'astigmatism': 2, 'tear-rate':3}
 
 
-final = id3(fileDictionary["s"], fileDictionary["attributes"], fileDictionary["classes"])
-
-
-print(final)
-
+correct_classification = 0
+incorrect_classification = 0
 
 
 
 
 
+#print(final['tear-rate']['normal'])
 
-#https://github.com/tofti/python-id3-trees/blob/master/id3.py
-
-
-
-'''
-def id3(S{}, ):
-    if all examples in S are of the same class
-        return a leaf with that class label
-    else if there are no more attributes to test
-        return a leaf with the most common class label
-    else
-        choose the attribute a that maximizes the Information Gain of S
-        let attribute a be the decision for the current node
-        add a branch from the current node for each possible value v of attribute a
-        for each branch
-            “sort” examples down the branches based on their value v of attribute a
-            recursively call ID3(Sv) on the set of examples in each branch
-'''
-
-'''
-totalNumData = int(data[7])
-
-entropy = -(yesCount/totalNumData*math.log2(yesCount/totalNumData)+noCount/totalNumData*math.log2(noCount/totalNumData))
-'''
-
-
+pp.pprint(final)
