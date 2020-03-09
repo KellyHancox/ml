@@ -6,41 +6,51 @@ import math
 import copy
 import random
 import pprint
+#import pydot
 pp = pprint.PrettyPrinter(indent = 4)
 
-'''
-#from internet
+
+def draw(parent_name, child_name):
+    edge = pydot.Edge(parent_name, child_name)
+    graph.add_edge(edge)
+
+def visit(node, parent=None):
+    for k,v in node.items():
+        if isinstance(v, dict):
+            # We start with the root node whose parent is None
+            # we don't want to graph the None node
+            if parent:
+                draw(parent, k)
+            visit(v, k)
+        else:
+            draw(parent, k)
+            # drawing the label using a distinct name
+            draw(k, v)
+
+#source https://stackoverflow.com/questions/34836777/print-complete-key-path-for-all-the-values-of-a-python-nested-dictionary
 def dict_path(path,my_dict):
-    dictArray = []
 
     for k,v in my_dict.items():
         if isinstance(v,dict):
             dict_path(path+" "+k,v)
         else:
-            print(path +" " + k)
-            noNewLines = path +" " + k
-            noNewLines = re.split(r"\n", noNewLines)
+            line = path+ " " +k
+            line = re.split(r" ", line)
+            line = line[1:]
+            fullLine = "if "
 
-            words = noNewLines
-            words = re.split(r" ", words)
-            words = words[1:]
+            for index in range(0, len(line)-1, 2):
+                if index == len(line)-2:
+                    fullLine = fullLine + line[index] + " is " + line[index+1]
+
+                else:
+                    fullLine = fullLine + line[index] + " is " + line[index+1] + " and "
             
-            for index in range(0, len(words), 2):
-                currD = {}
-                currD[words[index]] = words[index+1]
-                dictArray.append(currD)
-                # print(currD)
-
-            # print(words)
-            # print(path+" "+k,"=>",v)
-    print(dictArray)
-#dict_path("",my_dict)
-'''
+            fullLine = fullLine + ", then reccomendation is: " + v
+            print(fullLine)
+            
 
 def id3(s, attributes, classes):
-
-    if len(s) == 0:
-        return
 
     current_classes = return_classes(s)
 
@@ -56,7 +66,6 @@ def id3(s, attributes, classes):
     #else choose the attribute that maximizes the gain 
     else:
         attribute_with_most_gain = get_most_gain(s, attributes, classes)
-
         currentDict = {}
         for instance in s:
             instanceIndexed = re.split(r",", instance)
@@ -171,23 +180,17 @@ def classify_me(example, dictionary, index_labels):
     classification = ""
 
     for key in dictionary.keys():
-        print('key is:', key)
         currKey = key
 
         index = index_labels[key]
         currentVariable = example[index]
-        print('currentVariable:', currentVariable)
 
         for key2 in dictionary[currKey].keys():
 
-            print('key2 is:', key2)
-
             if currentVariable == key2:
-                print('is instance', isinstance(dictionary[currKey][key2],dict))
                 if isinstance(dictionary[currKey][key2],dict):
                     classification = classify_me(example, dictionary[currKey][key2], index_labels)
                 else:
-                    print('inside else. here is currkey:', dictionary[currKey][key2])
                     return dictionary[currKey][key2]
 
     return classification
@@ -239,7 +242,6 @@ entropy = get_entropy(yesCount, totalNumData, noCount)
 sArray = fileDictionary['s']
 
 
-
 random.shuffle(sArray)
 amountOfTraining = round(len(sArray)*.8)
 training = sArray[0:amountOfTraining]
@@ -247,6 +249,8 @@ test = sArray[amountOfTraining:]
 final = id3(training, fileDictionary["attributes"], fileDictionary["classes"])
 index_labels = {'age': 0, 'prescription': 1, 'astigmatism': 2, 'tear-rate':3}
 
+
+dict_path("", final)
 
 correct_classification = 0
 incorrect_classification = 0
@@ -259,7 +263,14 @@ for example in test:
     else:
         incorrect_classification = incorrect_classification + 1
 
-print("Correct classifications", correct_classification)
-print("Incorect classifications", incorrect_classification)
+#print("Correct classifications", correct_classification)
+#print("Incorrect classifications", incorrect_classification)
 
-#pp.pprint(final)
+
+
+#graphing with pydot
+'''
+graph = pydot.Dot(graph_type='graph')
+visit(final)
+graph.write_png('fishing_graph.png')
+'''
