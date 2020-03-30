@@ -6,10 +6,11 @@ import math
 import copy
 import random
 import pprint
-#import pydot
+import pydot
 pp = pprint.PrettyPrinter(indent = 4)
 
 
+#source: https://stackoverflow.com/questions/13688410/dictionary-object-to-decision-tree-in-pydot
 def draw(parent_name, child_name):
     edge = pydot.Edge(parent_name, child_name)
     graph.add_edge(edge)
@@ -25,7 +26,7 @@ def visit(node, parent=None):
         else:
             draw(parent, k)
             # drawing the label using a distinct name
-            draw(k, v)
+            draw(k, k+'_'+v)
 
 #source https://stackoverflow.com/questions/34836777/print-complete-key-path-for-all-the-values-of-a-python-nested-dictionary
 def dict_path(path,my_dict):
@@ -46,13 +47,16 @@ def dict_path(path,my_dict):
                 else:
                     fullLine = fullLine + line[index] + " is " + line[index+1] + " and "
             
-            fullLine = fullLine + ", then reccomendation is: " + v
+            fullLine = fullLine + ", then recommendation is: " + v
             print(fullLine)
             
 
 def id3(s, attributes, classes):
 
     current_classes = return_classes(s)
+
+    if len(s) == 0:
+        return
 
     #if all examples in s are of the same class
     if len(current_classes.keys()) == 1:
@@ -104,14 +108,15 @@ def get_most_gain(s, attributes, classes):
 
 
 def get_gain(variables, instances, index, classes):
-    temp = [ [ 0 for y in range( len(classes)+1 ) ] for x in range( len(variables) ) ]
+
+    temp = [ [ 0 for y in range( len(classes['values']) ) ] for x in range( len(variables) ) ]
+
     gain = []
     for instance in instances:
         instance = re.split(r",", instance)
 
         for j, variable in enumerate(variables):
             #index is the position of the attribute
-
             if instance[index] == variable:
 
                 for k, class_a in enumerate(classes['values']):
@@ -150,7 +155,6 @@ def get_gain(variables, instances, index, classes):
     
 
 def get_most_common_class(current_classes):
-
     return max(current_classes, key=current_classes.get)
 
 
@@ -168,11 +172,27 @@ def return_classes(s):
 
 
 
-def get_entropy(count, total, count2):
-    if count/total <= 0:
-        return 0
+def get_entropy(s):
 
-    return -(count/total*math.log2(count/total)+count2/total*math.log2(count2/total))
+    countingDict = {}
+    total = 0
+    for instance in s:
+
+        instance = re.split(r",", instance)
+        total = total + 1
+
+        if instance[len(instance)-1] in countingDict:
+            countingDict[instance[len(instance)-1]] = countingDict[instance[len(instance)-1]] + 1
+        else:
+           countingDict[instance[len(instance)-1]] = 1
+
+    entropyList = []
+    for val in countingDict.values():
+        value = val/total*math.log2(val/total)
+        entropyList.append(value)
+
+    finalEntropy = -sum(entropyList)
+    return finalEntropy
 
 
 def classify_me(example, dictionary, index_labels):
@@ -181,7 +201,6 @@ def classify_me(example, dictionary, index_labels):
 
     for key in dictionary.keys():
         currKey = key
-
         index = index_labels[key]
         currentVariable = example[index]
 
@@ -195,62 +214,69 @@ def classify_me(example, dictionary, index_labels):
 
     return classification
 
+def get_index_labels(attributes):
 
+    index_labels = {}
+    for key in attributes.keys():
+        if key != 'num':
+            index_labels[key] = attributes[key]['index']
+
+    return index_labels
+
+def is_an_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 #read in contents
-file = open("contactData.txt", "r")
+file = open("carData.txt", "r")
 contents = file.read()
 info = re.split(r"\n", contents)
 
 #create dictionary with information
 fileDictionary = {"s": []}
+count = 0
 for index in range(0, len(info)):
-    if index == 0:
+
+    if is_an_int(info[index]) and count == 0:
         # class values
         fileDictionary["classes"] = {"num": int(info[index]), "values": info[1].split(",")}
+        count = count + 1
         
-    if index == 2:
+    elif is_an_int(info[index]) and count == 1:
         fileDictionary["attributes"] = {"num":int(info[index])}
+        count = count + 1
+       
         for attributeIndex in range(index+1, index+1+int(info[index])):
             attribute = info[attributeIndex].split(",")[0]
             numValues = info[attributeIndex].split(",")[1]
             values = info[attributeIndex].split(",")[2:]
-            fileDictionary["attributes"][attribute] = {"index": attributeIndex-3, "num":numValues, "values":values}   
+            fileDictionary["attributes"][attribute] = {"index": attributeIndex-3, "num":numValues, "values":values}
     
-    if index == 7:
+    elif is_an_int(info[index]) and count == 2:
         fileDictionary["total"] = int(info[index])
+        count = count + 1
     
-    if index > 7:
+    elif count == 3:
         fileDictionary["s"].append(info[index])
 
-yesCount = 0
-noCount = 0
-totalNumData = 0
 
-#step 1, get total entropy
-for line in info[8:]:
-    lineArr = re.split(r",", line)
-    totalNumData = totalNumData + 1
-
-    if(lineArr[len(lineArr)-1])=='Yes':
-        yesCount += 1
-    else:
-        noCount += 1
-
-
-entropy = get_entropy(yesCount, totalNumData, noCount)
+entropy = get_entropy(fileDictionary['s'])
 sArray = fileDictionary['s']
-
+copyOfInfo = copy.deepcopy(fileDictionary)
 
 random.shuffle(sArray)
 amountOfTraining = round(len(sArray)*.8)
 training = sArray[0:amountOfTraining]
 test = sArray[amountOfTraining:]
+
 final = id3(training, fileDictionary["attributes"], fileDictionary["classes"])
-index_labels = {'age': 0, 'prescription': 1, 'astigmatism': 2, 'tear-rate':3}
+index_labels = get_index_labels(copyOfInfo["attributes"])
 
-
-dict_path("", final)
+#pp.pprint(final)
+#dict_path("", final)
 
 correct_classification = 0
 incorrect_classification = 0
@@ -263,14 +289,12 @@ for example in test:
     else:
         incorrect_classification = incorrect_classification + 1
 
-#print("Correct classifications", correct_classification)
-#print("Incorrect classifications", incorrect_classification)
+print("Correct classifications", correct_classification)
+print("Incorrect classifications", incorrect_classification)
 
-
-
-#graphing with pydot
 '''
+#graphing with pydot
 graph = pydot.Dot(graph_type='graph')
 visit(final)
-graph.write_png('fishing_graph.png')
+graph.write_png('fishing_graph2.png')
 '''
