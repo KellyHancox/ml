@@ -1,3 +1,5 @@
+#from https://www.youtube.com/watch?v=kft1AJ9WVDk
+
 import numpy as np
 
 class NeuralNetwork():
@@ -5,8 +7,6 @@ class NeuralNetwork():
     def __init__(self):
         np.random.seed(1)
         self.synaptic_weights = 2 * np.random.random((3, 1)) - 1
-        self.bias = np.random.rand(1)
-        self.lr = 0.05
 
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
@@ -18,54 +18,27 @@ class NeuralNetwork():
     def train(self, training_inputs, training_outputs, training_iterations):
 
         for iteration in range(training_iterations):
-            output = self.feed_forward(training_inputs)
-            print("outputs")
-            print(output)
+            #thinking is getting dot product between inputs and weights
+            #outputs the sigmoid of these
+            output = self.think(training_inputs)
+            #print("outputs:")
+            #print(output)
 
-            #backpropogation step 1: get difference of error
+            #nget difference of error
             error = training_outputs - output
-            print("sum of error: ")
+            print("error: ")
             print(error.sum())
 
-            '''
-            z = output
-
-            # backpropagation step 2
-            dcost_dpred = error
-            dpred_dz = sigmoid_der(z)
-
-            z_delta = dcost_dpred * dpred_dz
-
-            inputs = feature_set.T
-            weights -= lr * np.dot(inputs, z_delta)
-
-            for num in z_delta:
-                bias -= lr * num
-             '''
-
             #matrix multiplication
-            delta = error * self.sigmoid_derivative(output)
-
-            print("delta")
-            print(delta)
-
-            adjustments = self.lr * np.dot(training_inputs.T, error * self.sigmoid_derivative(output))
-            #not sure if this is plus or minus...
-            self.synaptic_weights -= adjustments
-
-            #update bias
-            for num in delta:
-                self.bias -= self.lr * num
-                print('bias')
-                print(self.bias)
+            adjustments = np.dot(training_inputs.T, error * self.sigmoid_derivative(output))
+            self.synaptic_weights += adjustments
     
-    def feed_forward(self, inputs):
+    def think(self, inputs):
         #using dot product again. our inputs are integers, our synaptic weights are floats
         #so we'll have to change inputs to floats
 
-        #feed foward step 1 and 2 combined. 1 is the dot product, 2 is the sigmoid
         inputs = inputs.astype(float)
-        output = self.sigmoid(np.dot(inputs, self.synaptic_weights) + self.bias)
+        output = self.sigmoid(np.dot(inputs, self.synaptic_weights))
 
         return output
     
@@ -103,19 +76,15 @@ if __name__ == "__main__":
     #training iterations are a custom input
     neural_network.train(training_inputs, training_outputs, 20000)
 
-    '''
     print("syn weights after training: ")
     print(neural_network.synaptic_weights)
-    '''
 
-    '''
+
     A = str(input("Input 1: "))
     B = str(input("Input 2: "))
     C = str(input("Input 3: "))
-    D = str(input("Input 4: "))
+    #D = str(input("Input 4: "))
 
-    print("new situation: input data = ", A, B, C, D)
+    print("new situation: input data = ", A, B, C)
     print("output data: ")
-    print(neural_network.feed_forward(np.array([A, B, C, D])))
-    '''
-    
+    print(neural_network.think(np.array([A, B, C])))
