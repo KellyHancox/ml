@@ -45,7 +45,7 @@ class NeuralNetwork():
         inputs = inputs.astype(float)
         output = self.sigmoid(np.dot(inputs, self.synaptic_weights) + self.bias)
         return output 
-    
+
 
 if __name__ == "__main__":
     neural_network = NeuralNetwork()
