@@ -1,12 +1,13 @@
 #combo of https://www.youtube.com/watch?v=kft1AJ9WVDk and https://stackabuse.com/creating-a-neural-network-from-scratch-in-python/
 
 import numpy as np
+import re
 
 class NeuralNetwork():
 
     def __init__(self):
         np.random.seed(42)
-        self.synaptic_weights = np.random.rand(3,1)
+        self.synaptic_weights = np.random.rand(64,1)
         self.bias = np.random.rand(1)
         self.lr = 0.05
 
@@ -29,6 +30,8 @@ class NeuralNetwork():
             #matrix multiplication
             delta = error * self.sigmoid_derivative(output)
 
+            #print(training_inputs)
+            training_inputs = training_inputs.astype(float)
             adjustments = self.lr * np.dot(training_inputs.T, error * self.sigmoid_derivative(output))
             #not sure if this is plus or minus...
             self.synaptic_weights -= adjustments
@@ -74,24 +77,43 @@ if __name__ == "__main__":
     1: weak, moderate, cool, Cloudy
     2: -, cold, -, rainy
     '''
-    training_inputs = np.array([[0,1,0],[0,0,1],[1,0,0],[1,1,0],[1,1,1]])
-    training_outputs = np.array([[1,0,0,1,1]]).T
+    # training_inputs = np.array([[0,1,0],[0,0,1],[1,0,0],[1,1,0],[1,1,1]])
+    # training_outputs = np.array([[1,0,0,1,1]]).T
 
-    #training iterations are a custom input
-    neural_network.train(training_inputs, training_outputs, 20000)
+
+    file = open("digitsTrain.txt", "r")
+    contents = file.read()
+    lines = re.split(r"\n", contents)
+
+    training_outputs = []
+    training_inputs = []
+
+    for line in lines:
+        split_line = re.split(r" ", line)
+        training_outputs.append(split_line.pop())
+        training_inputs.append(split_line)
+
+    #print(training_inputs)
+    training_inputs = np.array(training_inputs)
+    
+    training_outputs = np.array([training_outputs]).T
+    training_outputs = training_outputs.astype(float)
+
+    # #training iterations are a custom input
+    neural_network.train(training_inputs, training_outputs, 1000)
 
 
     print("syn weights after training: ")
     print(neural_network.synaptic_weights)
 
 
-    A = str(input("Input 1: "))
-    B = str(input("Input 2: "))
-    C = str(input("Input 3: "))
-    D = str(input("Input 4: "))
+    # A = str(input("Input 1: "))
+    # B = str(input("Input 2: "))
+    # C = str(input("Input 3: "))
+    # D = str(input("Input 4: "))
 
-    print("new situation: input data = ", A, B, C, D)
-    print("output data: ")
-    print(neural_network.feed_forward(np.array([A, B, C, D])))
+    # print("new situation: input data = ", A, B, C, D)
+    # print("output data: ")
+    print(neural_network.feed_forward(np.array([0,0,12,10,0,0,0,0,0,0,14,16,16,14,0,0,0,0,13,16,15,10,1,0,0,0,11,16,16,7,0,0,0,0,0,4,7,16,7,0,0,0,0,0,4,16,9,0,0,0,5,4,12,16,4,0,0,0,9,16,16,10,0,0])))
 
     
